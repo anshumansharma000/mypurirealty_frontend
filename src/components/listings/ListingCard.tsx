@@ -25,10 +25,11 @@ export default function ListingCard({
   badge,
   className,
 }: ListingCardProps) {
+  console.log("id", slug, id);
   return (
     <Link
       key={id}
-      href={`/listings/${slug}`}
+      href={`/listings/${slug}?id=${id}`}
       className={[
         "group relative flex w-[280px] flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition-all hover:shadow-md",
         className || "",

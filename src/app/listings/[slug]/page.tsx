@@ -9,43 +9,186 @@ import ListingPriceAndCharges from "@/components/listings/detail/ListingPriceAnd
 import ListingSidebar from "@/components/listings/detail/ListingSidebar";
 import MediaViewer, { Media } from "@/components/listings/detail/MediaViewer";
 import SimilarListings from "@/components/listings/detail/SimilarListings";
+import { useListing } from "@/features/listings/hooks/useListing";
+import { formatArea, formatINRCompact } from "@/lib/format";
+import type { Listing } from "@/shared/types";
 import { Armchair, Bath, BedDouble, Car } from "lucide-react";
-import { useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
-export default function ListingDetailPage({ params }: { params: { slug: string } }) {
+export default function ListingDetailPage() {
+  // support both /listings/[id] and /listings/[slug] while you migrate
+  const params = useParams<{ slug: string }>(); // slug is for display only
+  const sp = useSearchParams();
+  const id = sp.get("id") ?? undefined; // <-- fetch by id
+
+  const { data: listing, isLoading, isError } = useListing(id);
+
   const [mediaOpen, setMediaOpen] = useState(false);
-
-  const media: Media[] = [
-    {
-      id: "v1",
-      type: "video",
-      src: "https://www.w3schools.com/html/mov_bbb.mp4",
-      thumb: "https://picsum.photos/id/1020/400/300",
-    },
-    { id: "i1", type: "image", src: "https://picsum.photos/id/1018/1200/900" },
-    { id: "i2", type: "image", src: "https://picsum.photos/id/1025/1200/900" },
-    { id: "i3", type: "image", src: "https://picsum.photos/id/1039/1200/900" },
-    { id: "i4", type: "image", src: "https://picsum.photos/id/1040/1200/900" },
-  ];
-
   const [interestOpen, setInterestOpen] = useState(false);
 
-  const handleContact = () => setInterestOpen(true);
+  const media: Media[] = useMemo(() => {
+    if (!listing) return [];
+    const imgs = (listing.images ?? []).map((img, i) => ({
+      id: `i${i}`,
+      type: "image" as const,
+      src: img.url,
+      thumb: img.url,
+    }));
+    const vids = (listing.videoUrls ?? []).map((u, i) => ({
+      id: `v${i}`,
+      type: "video" as const,
+      src: u,
+      thumb: listing.images?.[0]?.url ?? undefined,
+    }));
+    return [...vids, ...imgs];
+  }, [listing]);
 
+  const handleContact = () => setInterestOpen(true);
   const handleFormSubmit = (data: any) => {
     console.log("Form submitted:", data);
     setInterestOpen(false);
     alert("Your interest has been submitted!");
   };
 
+  if (isLoading) {
+    return (
+      <main className="w-full px-4 md:px-8 lg:px-16 xl:px-24 py-6 mt-16">
+        <div className="animate-pulse h-8 w-56 rounded bg-neutral-200 mb-4" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)]">
+          <div className="space-y-6">
+            <div className="h-[420px] rounded-2xl bg-neutral-100" />
+            <div className="h-40 rounded-2xl bg-neutral-100" />
+            <div className="h-40 rounded-2xl bg-neutral-100" />
+          </div>
+          <div className="h-[420px] rounded-2xl bg-neutral-100" />
+        </div>
+      </main>
+    );
+  }
+
+  if (isError || !listing) {
+    return (
+      <main className="w-full px-4 md:px-8 lg:px-16 xl:px-24 py-6 mt-16">
+        <div className="rounded-2xl border p-6 text-red-600">Listing not found.</div>
+      </main>
+    );
+  }
+
+  // ---- UI mappers (keep visuals identical) ----
+  const priceAmount = listing.price ?? 0;
+  const negotiable = listing.priceBreakup?.negotiable ?? false;
+
+  const location = {
+    locality: listing.addressParts?.locality ?? listing.societyName ?? "Puri",
+    city: listing.addressParts?.city ?? "Puri",
+  };
+
+  const badges: string[] = [
+    listing.verified ? "Verified" : "",
+    listing.isFeatured ? "New" : "",
+    listing.reraRegistered ? "RERA" : "",
+  ].filter(Boolean);
+
+  const headlineFacts = [
+    listing.bedrooms ? { icon: BedDouble, label: `${listing.bedrooms} Beds` } : undefined,
+    listing.bathrooms ? { icon: Bath, label: `${listing.bathrooms} Baths` } : undefined,
+    (listing.coveredParkingCount ?? listing.openParkingCount)
+      ? {
+          icon: Car,
+          label: `${(listing.coveredParkingCount ?? 0) + (listing.openParkingCount ?? 0)} Parking`,
+        }
+      : undefined,
+    listing.furnishing ? { icon: Armchair, label: listing.furnishing } : undefined,
+  ].filter(Boolean) as { icon: any; label: string }[];
+
+  const areaLabel = (() => {
+    const { carpetArea, builtUpArea, superBuiltUpArea, landArea } = listing;
+    if (carpetArea) return `Carpet: ${formatArea(carpetArea)}`;
+    if (builtUpArea) return `Built-up: ${formatArea(builtUpArea)}`;
+    if (superBuiltUpArea) return `Super: ${formatArea(superBuiltUpArea)}`;
+    if (landArea) return `Land: ${formatArea(landArea)}`;
+    return undefined;
+  })();
+
+  const pricePerSqft = listing.carpetArea?.value
+    ? Math.round(priceAmount / listing.carpetArea.value)
+    : listing.builtUpArea?.value
+      ? Math.round(priceAmount / listing.builtUpArea.value)
+      : undefined;
+
+  const primaryFacts = [
+    areaLabel ? { label: "Area", value: areaLabel, highlight: true } : undefined,
+    pricePerSqft
+      ? { label: "Price / sqft", value: `₹${pricePerSqft.toLocaleString("en-IN")}` }
+      : undefined,
+    listing.listedByName ? { label: "Seller", value: listing.listedByName } : undefined,
+    listing.societyName ? { label: "Project", value: listing.societyName } : undefined,
+  ].filter(Boolean) as { label: string; value: string; highlight?: boolean }[];
+
+  const secondaryFacts = [
+    listing.transactionType
+      ? { label: "Transaction Type", value: listing.transactionType }
+      : undefined,
+    listing.status ? { label: "Status", value: listing.status } : undefined,
+    typeof listing.hasLift === "boolean"
+      ? { label: "Lifts", value: listing.hasLift ? "Yes" : "—" }
+      : undefined,
+    listing.furnishing ? { label: "Furnished Status", value: listing.furnishing } : undefined,
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  const otherCharges = [
+    listing.priceBreakup?.maintenanceMonthly != null
+      ? {
+          label: "Maintenance",
+          value: `₹${listing.priceBreakup.maintenanceMonthly.toLocaleString("en-IN")}/mo`,
+        }
+      : undefined,
+    listing.priceBreakup?.parkingCharges != null
+      ? {
+          label: "Parking",
+          value: `₹${listing.priceBreakup.parkingCharges.toLocaleString("en-IN")}`,
+        }
+      : undefined,
+    listing.priceBreakup?.clubMembershipCharges != null
+      ? {
+          label: "Club Membership",
+          value: `₹${listing.priceBreakup.clubMembershipCharges.toLocaleString("en-IN")}`,
+        }
+      : undefined,
+    listing.priceBreakup?.registrationCharges != null
+      ? { label: "Registration", value: "As per govt norms" }
+      : undefined,
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  const descriptionText =
+    listing.description ??
+    "Description not provided. Contact the seller for more details about this property.";
+
+  const seller = {
+    name: listing.listedByName ?? "Seller",
+    experience: undefined,
+    firm: listing.listedByType ?? undefined,
+    verified: !!listing.verified,
+    contactNumber: listing.contactNumber ?? "",
+  };
+
+  const mapEmbedUrl = (() => {
+    const lat = listing.geo?.lat;
+    const lng = listing.geo?.lng;
+    if (!lat || !lng) return undefined;
+    const q = encodeURIComponent(`${lat},${lng}`);
+    return `https://maps.google.com/maps?q=${q}&z=15&output=embed`;
+  })();
+
   return (
     <main className="w-full px-4 md:px-8 lg:px-16 xl:px-24 py-6 mt-16">
       <ListingHeader
-        listingId="abc123"
-        title="2 BHK Apartment in Baliapanda"
-        price={{ amount: 12500000, negotiable: true }}
-        location={{ locality: "Baliapanda", city: "Puri" }}
-        badges={["New", "Verified"]}
+        listingId={listing.id}
+        title={listing.title}
+        price={{ amount: priceAmount, negotiable }}
+        location={location}
+        badges={badges as any}
         className="mb-4"
       />
 
@@ -55,72 +198,38 @@ export default function ListingDetailPage({ params }: { params: { slug: string }
         <div className="space-y-6">
           <ListingOverviewSection
             media={media}
-            headlineFacts={[
-              { icon: BedDouble, label: "2 Beds" },
-              { icon: Bath, label: "2 Baths" },
-              { icon: Car, label: "1 Covered Parking" },
-              { icon: Armchair, label: "Unfurnished" },
-            ]}
-            primaryFacts={[
-              { label: "Carpet Area", value: "768 sqft", highlight: true },
-              { label: "Price / sqft", value: "₹13,336" },
-              { label: "Developer", value: "Laxmi Infra Venture Pvt. Ltd." },
-              { label: "Project", value: "Laxmi Vaikunthapuram" },
-            ]}
-            secondaryFacts={[
-              { label: "Transaction Type", value: "New Property" },
-              { label: "Status", value: "Under Construction" },
-              { label: "Lifts", value: "2" },
-              { label: "Furnished Status", value: "Unfurnished" },
-            ]}
+            headlineFacts={headlineFacts}
+            primaryFacts={primaryFacts}
+            secondaryFacts={secondaryFacts}
             onOpenMedia={() => setMediaOpen(true)}
           />
 
-          <ListingDescription
-            text={`This airy 2 BHK in Baliapanda offers a practical layout with a bright living area opening to a cozy balcony.
-The project has strong road connectivity and daily conveniences within a short walk.
-
-Bedrooms are well-proportioned with cross-ventilation, and the kitchen has a compact utility.
-Possession target is within 6–9 months, subject to final RERA updates.`}
-            highlights={[
-              "Sea breeze corridor; balcony faces East",
-              "Daily needs & school within 500 m",
-              "Two elevators per block; 24×7 security",
-              "Covered parking + visitor parking",
-            ]}
-          />
+          <ListingDescription text={descriptionText} highlights={listing.tags ?? []} />
 
           <ListingPriceAndCharges
-            totalPrice="₹1.25 Cr"
-            negotiable
-            pricePerSqft="₹13,336"
-            basePrice="₹1.20 Cr"
-            otherCharges={[
-              { label: "Maintenance", value: "₹2 / sqft / month" },
-              { label: "Parking", value: "₹1.5 Lakh" },
-              { label: "Registration", value: "As per govt norms" },
-            ]}
+            totalPrice={formatINRCompact(priceAmount)}
+            negotiable={negotiable}
+            pricePerSqft={pricePerSqft ? `₹${pricePerSqft.toLocaleString("en-IN")}` : undefined}
+            basePrice={
+              listing.priceBreakup?.basePrice != null
+                ? `₹${listing.priceBreakup.basePrice.toLocaleString("en-IN")}`
+                : undefined
+            }
+            otherCharges={otherCharges}
             note="All charges are indicative and subject to change. Please verify before finalizing."
           />
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <ListingSidebar
-          mapEmbedUrl="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14729.423523292517!2d85.8197425!3d19.8133822!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a19c6d8b8b3db63%3A0x44db7c2f6fcbf37f!2sPuri%2C%20Odisha!5e0!3m2!1sen!2sin!4v1717651290052!5m2!1sen!2sin"
-          seller={{
-            name: "Sandeep Rath",
-            experience: "8 years",
-            firm: "Laxmi Infra Realty",
-            verified: true,
-            contactNumber: "9876543210",
-          }}
-          onContact={handleContact}
-        />
+        <ListingSidebar mapEmbedUrl={mapEmbedUrl} seller={seller} onContact={handleContact} />
       </div>
+
       <Modal open={interestOpen} onClose={() => setInterestOpen(false)} title="Express Interest">
         <InterestForm onSubmit={handleFormSubmit} />
       </Modal>
-      <SimilarListings
+
+      {/* Keep your static similar list for now; we’ll wire API next */}
+      {/* <SimilarListings
         listings={[
           {
             id: "1",
@@ -158,7 +267,8 @@ Possession target is within 6–9 months, subject to final RERA updates.`}
           },
         ]}
         className="mt-6"
-      />
+      /> */}
+      <SimilarListings listingId={listing.id} title="Similar Listings" limit={4} className="mt-6" />
 
       <MediaViewer media={media} isOpen={mediaOpen} onClose={() => setMediaOpen(false)} />
     </main>

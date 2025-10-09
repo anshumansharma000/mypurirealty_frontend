@@ -1,112 +1,78 @@
-// app/listings/page.tsx
+"use client";
+
 import Filters from "@/components/listings/Filters";
 import ListingsGrid from "@/components/listings/ListingGrid";
 import ListingsToolbar from "@/components/listings/Toolbar";
 import Pagination from "@/components/ui/Pagination";
-import type { Listing } from "@/lib/types";
+import type { ListingsQuery } from "@/features/listings/api/getListings";
+import { useListings } from "@/features/listings/hooks/useListings";
 import QueryProvider from "@/shared/query/client";
-import React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import React, { useMemo } from "react";
 
-// NOTE: Replace this with real fetching later (DB/API).
-async function fetchListings(): Promise<Listing[]> {
-  // Minimal mock data so the page renders. Keep it tiny.
-  return [
-    {
-      id: "puri-flat-001",
-      slug: "sea-facing-3bhk-puri",
-      category: "Flat (Society)",
-      transactionType: "For Sale",
-      status: "Available",
-      title: "Sea-Facing 3BHK near Beach Road",
-      description: "Bright 3BHK with balcony and partial sea view.",
-      ownership: "Freehold",
-      carpetArea: { value: 1200, unit: "sqft" },
-      builtUpArea: { value: 1400, unit: "sqft" },
-      bedrooms: 3,
-      bathrooms: 2,
-      furnishing: "Semi-Furnished",
-      floorNumber: 5,
-      totalFloors: 10,
-      hasLift: true,
-      unitFacing: "East",
-      price: 9500000,
-      priceBreakup: { allInclusive: false, parkingCharges: 250000 },
-      address: "Sea Beach Road, Puri, Odisha",
-      addressParts: {
-        locality: "Sea Beach Road",
-        city: "Puri",
-        state: "Odisha",
-        pincode: "752001",
-      },
-      societyName: "Blue Dunes Residency",
-      amenities: ["Lift", "Security", "CCTV", "Gated Community", "Power Backup", "Visitor Parking"],
-      images: [{ url: "/images/sample-flat-1.jpg", alt: "Living room", isPrimary: true }],
-      isFeatured: true,
-      postedAt: new Date().toISOString(),
-    },
-    {
-      id: "puri-plot-101",
-      category: "Plot",
-      transactionType: "For Sale",
-      status: "Available",
-      title: "Corner Residential Plot near Baliapanda",
-      landArea: { value: 2400, unit: "sqft" },
-      plotLengthFt: 60,
-      plotWidthFt: 40,
-      plotFacing: "North-East",
-      cornerPlot: true,
-      price: 4200000,
-      address: "Baliapanda, Puri, Odisha",
-      addressParts: { locality: "Baliapanda", city: "Puri", state: "Odisha", pincode: "752001" },
-      images: [{ url: "/images/sample-plot-1.jpg", alt: "Open plot", isPrimary: true }],
-      postedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    },
-    {
-      id: "puri-house-207",
-      category: "Independent House",
-      transactionType: "For Sale",
-      status: "Under Offer",
-      title: "2-Storey Independent House near Chakratirtha Road",
-      builtUpArea: { value: 2100, unit: "sqft" },
-      landArea: { value: 1500, unit: "sqft" },
-      bedrooms: 4,
-      bathrooms: 3,
-      furnishing: "Unfurnished",
-      price: 12500000,
-      address: "CT Road, Puri, Odisha",
-      addressParts: { locality: "Chakratirtha Road", city: "Puri", state: "Odisha" },
-      images: [{ url: "/images/sample-house-1.jpg", alt: "Façade", isPrimary: true }],
-      postedAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-    },
-  ];
-}
+export default function ListingsPage() {
+  const sp = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-export default async function ListingsPage() {
-  const listings = await fetchListings();
+  // URL → query (URL is source of truth)
+  const page = Number(sp.get("page") ?? 1);
+  const perPage = Number(sp.get("perPage") ?? 12);
 
+  const params: ListingsQuery = useMemo(
+    () => ({
+      q: sp.get("q") ?? undefined,
+      sort: sp.get("sort") ?? "price_desc",
+      city: sp.get("city") ?? "puri",
+      minPrice: sp.get("minPrice") ? Number(sp.get("minPrice")) : undefined,
+      maxPrice: sp.get("maxPrice") ? Number(sp.get("maxPrice")) : undefined,
+      bedrooms: sp.get("bedrooms") ? Number(sp.get("bedrooms")) : undefined,
+      page,
+      perPage,
+    }),
+    [sp, page, perPage],
+  );
+
+  // Fetch (TanStack Query v5)
+  const { data, isLoading, isError } = useListings(params);
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+  // (your existing filters expect a default value)
   const defaultFilters = { categories: [] as any[] };
 
+  const onPageChange = (nextPage: number) => {
+    const next = new URLSearchParams(sp.toString());
+    if (nextPage <= 1) next.delete("page");
+    else next.set("page", String(nextPage));
+    router.push(`${pathname}?${next.toString()}`);
+  };
+
   return (
-    <QueryProvider>
-      <main className="container mx-auto  px-4 py-6 mt-16">
-        <div className="mb-4 flex flex-col gap-3 sm:mb-6">
-          <h1 className="text-2xl font-semibold text-neutral-900">Properties in Puri</h1>
-          <ListingsToolbar total={listings.length} disabled />
-        </div>
+    <main className="container mx-auto px-4 py-6 mt-16">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6">
+        <h1 className="text-2xl font-semibold text-neutral-900">Properties in Puri</h1>
+        <ListingsToolbar total={total} disabled={isLoading || isError} />
+      </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[280px_1fr]">
-          {/* Sidebar filters */}
-          <Filters value={defaultFilters} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[280px_1fr]">
+        {/* Sidebar filters (unchanged UI) */}
+        <Filters value={defaultFilters} />
 
-          {/* Results */}
-          <div className="flex flex-col gap-4">
-            <ListingsGrid data={listings} />
-            <div className="mt-2 flex items-center justify-center">
-              <Pagination currentPage={1} totalPages={3} />
-            </div>
+        {/* Results */}
+        <div className="flex flex-col gap-4">
+          <ListingsGrid
+            data={data?.items ?? []}
+            loading={isLoading}
+            // keep your existing API for favorites; wire later if needed
+            onFavoriteToggle={undefined}
+          />
+
+          <div className="mt-2 flex items-center justify-center">
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         </div>
-      </main>
-    </QueryProvider>
+      </div>
+    </main>
   );
 }

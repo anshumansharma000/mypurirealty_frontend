@@ -19,20 +19,6 @@ import React from "react";
 
 // components/listings/ListingCardWide.tsx
 
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
-// components/listings/ListingCardWide.tsx
-
 const ACCENT = "#B68C2C";
 
 export type ListingCardWideProps = {
@@ -68,9 +54,8 @@ export default function ListingCardWide({
   onFavoriteToggle,
   className = "",
 }: ListingCardWideProps) {
-  const linkHref =
-    href ??
-    (listing.slug ? `/listings/${listing.slug}` : `/listings/${encodeURIComponent(listing.id)}`);
+  const slugPart = listing.slug ?? encodeURIComponent(listing.id);
+  const linkHref = href ?? `/listings/${slugPart}?id=${encodeURIComponent(listing.id)}`;
   const cover = primary(listing.images);
   const allIn = estimateAllInclusivePrice(listing.price, listing.priceBreakup);
 

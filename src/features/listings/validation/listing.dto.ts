@@ -19,10 +19,14 @@ const B = z
   .optional()
   .transform((v) => (typeof v === "boolean" ? v : undefined));
 
-const Iso = z
-  .union([z.string().datetime({ offset: true }), Empty])
-  .optional()
-  .transform((v) => (typeof v === "string" ? v : undefined));
+// helpers
+const S = z.string().nullish(); // string | null | undefined
+const Iso = z.string().datetime({ offset: true }).nullish();
+
+// const Iso = z
+//   .union([z.string().datetime({ offset: true }), Empty])
+//   .optional()
+//   .transform((v) => (typeof v === "string" ? v : undefined));
 
 const AreaUnit = z.enum(["sqft", "sqyd", "sqm", "acre", "hectare", "decimal", "biswa", "guntha"]);
 
@@ -34,18 +38,25 @@ const AreaDTO = z
 
 const ImageObj = z.object({
   url: z.string().url(),
-  alt: z.string().optional(),
-  isPrimary: B,
+  alt: S,
+  isPrimary: z.coerce.boolean().nullish(),
 });
+// const ImageObj = z.object({
+//   url: z.string().url(),
+//   alt: z.string().optional(),
+//   isPrimary: B,
+// });
 
-const ImagesDTO = z
-  .union([
-    z.array(ImageObj),
-    z.array(z.string().url()),
-    Empty, // allow empty string as “no images”
-  ])
-  .optional()
-  .transform((v) => (Array.isArray(v) ? v : []));
+// const ImagesDTO = z
+//   .union([
+//     z.array(ImageObj),
+//     z.array(z.string().url()),
+//     Empty, // allow empty string as “no images”
+//   ])
+//   .optional()
+//   .transform((v) => (Array.isArray(v) ? v : []));
+
+const ImagesDTO = z.array(z.union([ImageObj, z.string().url()])).nullish();
 
 const PriceBreakupDTO = z
   .object({
@@ -101,68 +112,124 @@ export const ListingDTO = z
     yearBuilt: N,
     possessionDate: Iso,
 
-    carpetArea: AreaDTO,
-    builtUpArea: AreaDTO,
-    superBuiltUpArea: AreaDTO,
-    landArea: AreaDTO,
+    carpetArea: z
+      .union([
+        z.object({
+          value: z.coerce.number(),
+          unit: z.enum(["sqft", "sqyd", "sqm", "acre", "hectare", "decimal", "biswa", "guntha"]),
+        }),
+        z.coerce.number(),
+      ])
+      .nullish(),
+    builtUpArea: z
+      .union([
+        z.object({
+          value: z.coerce.number(),
+          unit: z.enum(["sqft", "sqyd", "sqm", "acre", "hectare", "decimal", "biswa", "guntha"]),
+        }),
+        z.coerce.number(),
+      ])
+      .nullish(),
+    superBuiltUpArea: z
+      .union([
+        z.object({
+          value: z.coerce.number(),
+          unit: z.enum(["sqft", "sqyd", "sqm", "acre", "hectare", "decimal", "biswa", "guntha"]),
+        }),
+        z.coerce.number(),
+      ])
+      .nullish(),
+    landArea: z
+      .union([
+        z.object({
+          value: z.coerce.number(),
+          unit: z.enum(["sqft", "sqyd", "sqm", "acre", "hectare", "decimal", "biswa", "guntha"]),
+        }),
+        z.coerce.number(),
+      ])
+      .nullish(),
 
-    plotLengthFt: N,
-    plotWidthFt: N,
-    frontageFt: N,
-    roadWidthFt: N,
-    plotFacing: z.string().optional(),
-    cornerPlot: B,
+    plotLengthFt: z.coerce.number().nullish(),
+    plotWidthFt: z.coerce.number().nullish(),
+    frontageFt: z.coerce.number().nullish(),
+    roadWidthFt: z.coerce.number().nullish(),
+    plotFacing: S,
+    cornerPlot: z.coerce.boolean().nullish(),
 
-    bedrooms: N,
-    bathrooms: N,
-    balconies: N,
-    furnishing: z.string().optional(),
-    floorNumber: N,
-    totalFloors: N,
-    hasLift: B,
-    coveredParkingCount: N,
-    openParkingCount: N,
-    vaastuCompliant: B,
-    unitFacing: z.string().optional(),
+    bedrooms: z.coerce.number().nullish(),
+    bathrooms: z.coerce.number().nullish(),
+    balconies: z.coerce.number().nullish(),
+    furnishing: S, // ← nullish now
+    floorNumber: z.coerce.number().nullish(),
+    totalFloors: z.coerce.number().nullish(),
+    hasLift: z.coerce.boolean().nullish(),
+    coveredParkingCount: z.coerce.number().nullish(),
+    openParkingCount: z.coerce.number().nullish(),
+    vaastuCompliant: z.coerce.boolean().nullish(),
+    unitFacing: S,
 
     // backend sends camelCase price now
     price: z.coerce.number(),
-    priceBreakup: PriceBreakupDTO,
+    priceBreakup: z
+      .object({
+        basePrice: z.coerce.number().nullish(),
+        maintenanceMonthly: z.coerce.number().nullish(),
+        parkingCharges: z.coerce.number().nullish(),
+        clubMembershipCharges: z.coerce.number().nullish(),
+        registrationCharges: z.coerce.number().nullish(),
+        gstPercent: z.coerce.number().nullish(),
+        negotiable: z.coerce.boolean().nullish(),
+        allInclusive: z.coerce.boolean().nullish(),
+        bookingAmount: z.coerce.number().nullish(),
+      })
+      .partial()
+      .nullish(),
 
-    address: z.string().optional(),
-    addressParts: AddressPartsDTO,
-    geo: GeoDTO,
+    address: S,
+    addressParts: z
+      .object({
+        line1: S,
+        line2: S,
+        locality: S,
+        landmark: S,
+        city: S,
+        state: S,
+        pincode: S,
+      })
+      .partial()
+      .nullish(),
+    geo: z.object({ lat: z.coerce.number(), lng: z.coerce.number() }).nullish(),
 
-    societyName: z.string().optional(),
-    reraId: z.string().optional(),
-    reraRegistered: B,
-    amenities: z.array(z.string()).optional(),
+    societyName: S, // ← nullish now
+    reraId: S, // ← nullish now
+    reraRegistered: z.coerce.boolean().nullish(),
+    amenities: z.array(z.string()).nullish(),
 
-    images: ImagesDTO,
-    videoUrls: z.array(z.string().url()).optional(),
-    virtualTourUrl: z.string().url().optional(),
-    documents: z.array(z.object({ label: z.string(), url: z.string().url() })).optional(),
+    images: ImagesDTO, // ← mixed array allowed
+    videoUrls: z.array(z.string().url()).nullish(),
+    virtualTourUrl: z.string().url().nullish(), // ← nullish now
+    documents: z.array(z.object({ label: z.string(), url: z.string().url() })).nullish(),
 
-    listedByType: ContactType,
-    listedByName: z.string().optional(),
-    contactNumber: z.string().optional(),
-    verified: B,
+    listedByType: z.enum(["Owner", "Broker", "Builder", "Agency"]).nullish(),
+    listedByName: S,
+    contactNumber: S,
+    verified: z.coerce.boolean().nullish(),
 
-    isFeatured: B,
-    tags: z.array(z.string()).optional(),
+    isFeatured: z.coerce.boolean().nullish(),
+    tags: z.array(z.string()).nullish(),
     createdAt: Iso,
     updatedAt: Iso,
     postedAt: Iso,
 
     broker: z
       .object({
-        id: z.string().optional(),
-        name: z.string().optional(),
-        phone: z.string().optional(),
-        type: ContactType,
+        id: S,
+        name: S,
+        phone: S,
+        type: z.enum(["Owner", "Broker", "Builder", "Agency"]).nullish(),
       })
       .partial()
-      .optional(),
+      .nullish(),
   })
   .loose();
 
