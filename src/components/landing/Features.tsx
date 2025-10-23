@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { CalendarCheck, Heart, IndianRupee, ListChecks, MapPin, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 const features = [
   {
@@ -66,7 +67,9 @@ export default function Features() {
         </div>
 
         <div className="mt-6 text-center">
-          <Button>Explore Listings</Button>
+          <Link href="/listings">
+            <Button>Explore Listings</Button>
+          </Link>
         </div>
       </Container>
     </section>

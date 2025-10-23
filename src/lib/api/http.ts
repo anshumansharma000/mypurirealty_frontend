@@ -1,4 +1,4 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE!; // e.g. https://api.mpr.local
+import { env } from "@/config/env";
 
 export class ApiError extends Error {
   status: number;
@@ -11,7 +11,11 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  if (!env.apiBase) {
+    throw new Error("Missing API base URL. Configure it in src/config/env.ts or via env vars.");
+  }
+
+  const res = await fetch(`${env.apiBase}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     credentials: "include",

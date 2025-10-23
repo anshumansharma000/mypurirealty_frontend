@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { BadgeCheck, Building2, Workflow } from "lucide-react";
+import Link from "next/link";
 
 export default function ValueSection() {
   return (
@@ -59,8 +60,12 @@ export default function ValueSection() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button>Start your search</Button>
-          <Button variant="outline">Talk to us</Button>
+          <Link href="/listings">
+            <Button>Start your search</Button>
+          </Link>
+          <a href="tel:+919438141111">
+            <Button variant="outline">Talk to us</Button>
+          </a>
         </div>
       </Container>
     </section>

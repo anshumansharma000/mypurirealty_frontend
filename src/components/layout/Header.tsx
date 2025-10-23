@@ -38,10 +38,10 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-medium transition ${
+                  className={`rounded-md px-3 py-1 text-sm font-medium transition ${
                     isActive
-                      ? "text-gold-600 underline underline-offset-4 decoration-gold-strong"
-                      : "text-white/90 hover:text-gold-600"
+                      ? "bg-gold-600 text-white font-semibold shadow-sm hover:bg-gold-500"
+                      : "text-white/90 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   {link.label}
@@ -105,8 +105,8 @@ export default function Header() {
                       href={link.href}
                       className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${
                         isActive
-                          ? "bg-white/20 text-ink underline underline-offset-4 decoration-gold-strong"
-                          : "text-white hover:bg-white/10"
+                          ? "bg-gold-600 text-white font-semibold hover:bg-gold-500"
+                          : "text-white hover:text-white hover:bg-white/10"
                       }`}
                     >
                       {link.label}

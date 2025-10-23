@@ -2,12 +2,21 @@
 
 import React, { useState } from "react";
 
-type Props = {
-  onSubmit: (form: { name: string; phone: string; email?: string; message?: string }) => void;
+export type InterestFormValues = {
+  name: string;
+  phone: string;
+  email?: string;
+  message?: string;
 };
 
-export default function InterestForm({ onSubmit }: Props) {
-  const [form, setForm] = useState({
+type Props = {
+  onSubmit: (form: InterestFormValues) => void;
+  submitting?: boolean;
+  error?: string | null;
+};
+
+export default function InterestForm({ onSubmit, submitting = false, error }: Props) {
+  const [form, setForm] = useState<InterestFormValues>({
     name: "",
     phone: "",
     email: "",
@@ -15,12 +24,23 @@ export default function InterestForm({ onSubmit }: Props) {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name as keyof InterestFormValues]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    const trimmed: InterestFormValues = {
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email?.trim(),
+      message: form.message?.trim(),
+    };
+    onSubmit({
+      ...trimmed,
+      email: trimmed.email ? trimmed.email : undefined,
+      message: trimmed.message ? trimmed.message : undefined,
+    });
   };
 
   return (
@@ -31,6 +51,7 @@ export default function InterestForm({ onSubmit }: Props) {
           type="text"
           name="name"
           required
+          disabled={submitting}
           value={form.name}
           onChange={handleChange}
           className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
@@ -43,6 +64,7 @@ export default function InterestForm({ onSubmit }: Props) {
           type="tel"
           name="phone"
           required
+          disabled={submitting}
           value={form.phone}
           onChange={handleChange}
           placeholder="e.g. 9876543210"
@@ -55,6 +77,7 @@ export default function InterestForm({ onSubmit }: Props) {
         <input
           type="email"
           name="email"
+           disabled={submitting}
           value={form.email}
           onChange={handleChange}
           className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
@@ -66,6 +89,7 @@ export default function InterestForm({ onSubmit }: Props) {
         <textarea
           name="message"
           rows={3}
+          disabled={submitting}
           value={form.message}
           onChange={handleChange}
           placeholder="I’m interested in this property..."
@@ -75,10 +99,12 @@ export default function InterestForm({ onSubmit }: Props) {
 
       <button
         type="submit"
-        className="mt-2 w-full rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-white hover:bg-gold-600"
+        disabled={submitting}
+        className="mt-2 w-full rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-white hover:bg-gold-600 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Submit Interest
+        {submitting ? "Submitting..." : "Submit Interest"}
       </button>
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </form>
   );
 }

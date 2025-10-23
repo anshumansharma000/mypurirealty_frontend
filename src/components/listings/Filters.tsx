@@ -1,10 +1,14 @@
-// components/listings/Filters.tsx
 "use client";
 
-import { ConstructionStatus, Furnishing, ListingCategory } from "@/lib/types";
-import React, { useMemo, useState } from "react";
-
-// components/listings/Filters.tsx
+import {
+  ConstructionStatus,
+  Furnishing,
+  ListingCategory,
+  formatConstructionStatus,
+  formatFurnishing,
+} from "@/lib/types";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 export type FiltersState = {
   categories: ListingCategory[]; // multi
@@ -38,13 +42,12 @@ const CATEGORIES: ListingCategory[] = [
 ];
 
 const BEDROOMS = [1, 2, 3, 4];
-const FURNISHINGS: Furnishing[] = ["Unfurnished", "Semi-Furnished", "Furnished"];
-const CONSTRUCTIONS: ConstructionStatus[] = [
-  "Ready to Move",
-  "Under Construction",
-  "Under Renovation",
-  "Possession Soon",
-];
+const FURNISHINGS: Furnishing[] = ["unfurnished", "semi", "fully"];
+const CONSTRUCTIONS: ConstructionStatus[] = ["ready_to_move", "under_construction", "new_launch"];
+
+function isLandCategory(c: ListingCategory) {
+  return c === "Plot" || c === "Farm Land";
+}
 
 export default function Filters({
   value,
@@ -53,6 +56,20 @@ export default function Filters({
   onClear,
   className = "",
 }: FiltersProps) {
+  // URL helpers
+  const router = useRouter();
+  const sp = useSearchParams();
+  const pathname = usePathname();
+
+  const setMany = (next: Record<string, string | number | undefined | null>) => {
+    const q = new URLSearchParams(sp.toString());
+    Object.entries(next).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === "") q.delete(k);
+      else q.set(k, String(v));
+    });
+    router.replace(`${pathname}?${q.toString()}`);
+  };
+
   // Local shadow state (so users can change fields and only "Apply" when ready)
   const [local, setLocal] = useState<FiltersState>(value);
   const [open, setOpen] = useState(false);
@@ -68,6 +85,13 @@ export default function Filters({
     return n;
   }, [local]);
 
+  // Hide unit-related filters when ONLY land categories are selected
+  const hideUnitFilters = useMemo(() => {
+    const cats = local.categories ?? [];
+    if (cats.length === 0) return false; // no category selected → show all
+    return cats.every(isLandCategory);
+  }, [local.categories]);
+
   const set = <K extends keyof FiltersState>(key: K, v: FiltersState[K]) => {
     const next = { ...local, [key]: v };
     setLocal(next);
@@ -82,12 +106,34 @@ export default function Filters({
   };
 
   const clearAll = () => {
-    setLocal({ categories: [] });
-    onChange?.({ categories: [] });
+    const cleared: FiltersState = { categories: [] };
+    setLocal(cleared);
+    onChange?.(cleared);
     onClear?.();
+
+    // also clear from URL (and reset page)
+    setMany({
+      categories: undefined,
+      minPrice: undefined,
+      maxPrice: undefined,
+      bedrooms: undefined,
+      furnishing: undefined,
+      construction: undefined,
+      page: undefined,
+    });
   };
 
   const apply = () => {
+    // write to URL; backend expects basic scalar params
+    setMany({
+      categories: local.categories?.length ? local.categories.join(",") : undefined,
+      minPrice: local.minPrice,
+      maxPrice: local.maxPrice,
+      bedrooms: local.bedrooms,
+      furnishing: local.furnishing,
+      construction: local.construction,
+      page: undefined, // reset pagination on filter change
+    });
     onApply?.(local);
     setOpen(false);
   };
@@ -145,7 +191,12 @@ export default function Filters({
                 </button>
               </div>
               <div className="overflow-y-auto px-4 py-3">
-                <FiltersBody local={local} set={set} toggleCategory={toggleCategory} />
+                <FiltersBody
+                  local={local}
+                  set={set}
+                  toggleCategory={toggleCategory}
+                  hideUnitFilters={hideUnitFilters}
+                />
               </div>
               <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
                 <button className="rounded-lg border px-3 py-2 text-sm" onClick={clearAll}>
@@ -175,7 +226,12 @@ export default function Filters({
             ) : null}
           </div>
 
-          <FiltersBody local={local} set={set} toggleCategory={toggleCategory} />
+          <FiltersBody
+            local={local}
+            set={set}
+            toggleCategory={toggleCategory}
+            hideUnitFilters={hideUnitFilters}
+          />
 
           <div className="mt-4 flex items-center justify-between">
             <button className="rounded-lg border px-3 py-2 text-sm" onClick={clearAll}>
@@ -198,10 +254,12 @@ function FiltersBody({
   local,
   set,
   toggleCategory,
+  hideUnitFilters,
 }: {
   local: FiltersState;
   set: <K extends keyof FiltersState>(key: K, v: FiltersState[K]) => void;
   toggleCategory: (cat: ListingCategory) => void;
+  hideUnitFilters: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -253,79 +311,95 @@ function FiltersBody({
         </div>
       </section>
 
-      {/* Bedrooms */}
-      <section>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Bedrooms
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {BEDROOMS.map((b) => (
+      {/* Bedrooms (hidden for land) */}
+      {!hideUnitFilters && (
+        <section>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Bedrooms
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {BEDROOMS.map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => set("bedrooms", local.bedrooms === b ? undefined : b)}
+                className={[
+                  "rounded-full px-3 py-1 text-sm",
+                  local.bedrooms === b
+                    ? "bg-neutral-900 text-white"
+                    : "bg-neutral-100 text-neutral-800",
+                ].join(" ")}
+              >
+                {b === 4 ? "4+" : b}
+              </button>
+            ))}
             <button
-              key={b}
               type="button"
-              onClick={() => set("bedrooms", local.bedrooms === b ? undefined : b)}
+              onClick={() => set("bedrooms", undefined)}
               className={[
                 "rounded-full px-3 py-1 text-sm",
-                local.bedrooms === b
+                local.bedrooms == null
                   ? "bg-neutral-900 text-white"
                   : "bg-neutral-100 text-neutral-800",
               ].join(" ")}
             >
-              {b === 4 ? "4+" : b}
+              Any
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => set("bedrooms", undefined)}
-            className={[
-              "rounded-full px-3 py-1 text-sm",
-              local.bedrooms == null
-                ? "bg-neutral-900 text-white"
-                : "bg-neutral-100 text-neutral-800",
-            ].join(" ")}
+          </div>
+        </section>
+      )}
+
+      {/* Furnishing (hidden for land) */}
+      {!hideUnitFilters && (
+        <section>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Furnishing
+          </h4>
+          <select
+            value={local.furnishing ?? ""}
+            onChange={(e) =>
+              set(
+                "furnishing",
+                e.target.value ? (e.target.value as FiltersState["furnishing"]) : undefined,
+              )
+            }
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
           >
-            Any
-          </button>
-        </div>
-      </section>
+            <option value="">Any</option>
+            {FURNISHINGS.map((f) => (
+              <option key={f} value={f}>
+                {formatFurnishing(f) ?? f}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
 
-      {/* Furnishing */}
-      <section>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Furnishing
-        </h4>
-        <select
-          value={local.furnishing ?? ""}
-          onChange={(e) => set("furnishing", (e.target.value || undefined) as any)}
-          className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
-        >
-          <option value="">Any</option>
-          {FURNISHINGS.map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      {/* Construction status */}
-      <section>
-        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Construction Status
-        </h4>
-        <select
-          value={local.construction ?? ""}
-          onChange={(e) => set("construction", (e.target.value || undefined) as any)}
-          className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
-        >
-          <option value="">Any</option>
-          {CONSTRUCTIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </section>
+      {/* Construction status (hidden for land) */}
+      {!hideUnitFilters && (
+        <section>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Construction Status
+          </h4>
+          <select
+            value={local.construction ?? ""}
+            onChange={(e) =>
+              set(
+                "construction",
+                e.target.value ? (e.target.value as FiltersState["construction"]) : undefined,
+              )
+            }
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+          >
+            <option value="">Any</option>
+            {CONSTRUCTIONS.map((c) => (
+              <option key={c} value={c}>
+                {formatConstructionStatus(c) ?? c}
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
     </div>
   );
 }

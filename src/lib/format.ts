@@ -63,7 +63,7 @@ const AREA_FACTORS_TO_SQFT: Partial<Record<AreaUnit, number>> = {
   // biswa: (region-dependent; set via setAreaUnitFactor)
 };
 
-let CUSTOM_UNIT_TO_SQFT: Partial<Record<AreaUnit, number>> = {};
+const CUSTOM_UNIT_TO_SQFT: Partial<Record<AreaUnit, number>> = {};
 
 export function setAreaUnitFactor(unit: AreaUnit, factorToSqft: number) {
   CUSTOM_UNIT_TO_SQFT[unit] = factorToSqft;

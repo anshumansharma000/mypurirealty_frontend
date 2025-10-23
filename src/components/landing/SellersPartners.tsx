@@ -1,12 +1,20 @@
+'use client';
+
 // src/components/landing/SellersPartners.tsx
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Home, Users } from "lucide-react";
 import Image from "next/image";
+import { useCallback } from "react";
+import { useToast } from "@/shared/ui/toast";
 
 export default function SellersPartners() {
+  const { showToast } = useToast();
+  const handleComingSoon = useCallback(() => {
+    showToast({ message: "Feature in progress—rolling out soon.", type: "info" });
+  }, [showToast]);
+
   return (
     <section id="sellers-partners" className="py-12 md:py-16">
       <Container>
@@ -33,8 +41,10 @@ export default function SellersPartners() {
               </li>
             </ul>
             <div className="mt-6 flex gap-3">
-              <Button>List your property</Button>
-              <Button variant="ghost">Know more</Button>
+              <Button onClick={handleComingSoon}>List your property</Button>
+              <Button variant="ghost" onClick={handleComingSoon}>
+                Know more
+              </Button>
             </div>
           </div>
 
@@ -109,8 +119,10 @@ export default function SellersPartners() {
               </li>
             </ul>
             <div className="mt-6 flex gap-3">
-              <Button>Become a partner</Button>
-              <Button variant="ghost">Talk to our team</Button>
+              <Button onClick={handleComingSoon}>Become a partner</Button>
+              <Button variant="ghost" onClick={handleComingSoon}>
+                Talk to our team
+              </Button>
             </div>
           </div>
         </div>

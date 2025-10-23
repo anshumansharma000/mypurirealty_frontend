@@ -11,26 +11,45 @@ export type ListingCategory =
   | "Office"
   | "Other";
 
-export type TransactionType = "For Sale" | "For Rent";
+export type TransactionType = "sale" | "rent";
+export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
+  sale: "For Sale",
+  rent: "For Rent",
+};
 
-// Availability/status of the listing itself (not construction progress)
 export type ListingStatus =
-  | "Available"
-  | "Reserved"
-  | "Under Offer"
-  | "Booked"
-  | "Sold"
-  | "Rented"
-  | "Inactive";
+  | "draft"
+  | "available"
+  | "reserved"
+  | "under_offer"
+  | "booked"
+  | "sold"
+  | "rented"
+  | "inactive";
+export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
+  draft: "Draft",
+  available: "Available",
+  reserved: "Reserved",
+  under_offer: "Under Offer",
+  booked: "Booked",
+  sold: "Sold",
+  rented: "Rented",
+  inactive: "Inactive",
+};
 
-// Construction/progress state of the property
-export type ConstructionStatus =
-  | "Ready to Move"
-  | "Under Construction"
-  | "Under Renovation"
-  | "Possession Soon";
+export type ConstructionStatus = "under_construction" | "ready_to_move" | "new_launch";
+export const CONSTRUCTION_STATUS_LABELS: Record<ConstructionStatus, string> = {
+  under_construction: "Under Construction",
+  ready_to_move: "Ready to Move",
+  new_launch: "New Launch",
+};
 
-export type Furnishing = "Unfurnished" | "Semi-Furnished" | "Furnished";
+export type Furnishing = "unfurnished" | "semi" | "fully";
+export const FURNISHING_LABELS: Record<Furnishing, string> = {
+  unfurnished: "Unfurnished",
+  semi: "Semi Furnished",
+  fully: "Fully Furnished",
+};
 
 export type DirectionFacing =
   | "North"
@@ -61,8 +80,8 @@ export type AreaUnit =
   | "guntha";
 
 export type Area = {
-  value: number; // raw numeric value
-  unit: AreaUnit; // how to interpret the value
+  value: number;
+  unit: AreaUnit;
 };
 
 export type Amenity =
@@ -85,138 +104,205 @@ export type Amenity =
   | "Waste Disposal"
   | "Wi-Fi";
 
+export type ListingBadge = "Verified" | "New" | "RERA" | "Hot" | (string & {});
+
+export type Price = {
+  amount: number;
+  negotiable?: boolean;
+};
+
+export type Location = {
+  locality: string;
+  city?: string | null;
+  address?: string | null;
+};
+
 export type PriceBreakup = {
-  basePrice?: number; // base/property price
-  maintenanceMonthly?: number; // society/complex charges
+  basePrice?: number;
+  maintenanceMonthly?: number;
   parkingCharges?: number;
   clubMembershipCharges?: number;
   registrationCharges?: number;
-  gstPercent?: number; // if applicable
+  gstPercent?: number;
   negotiable?: boolean;
-  allInclusive?: boolean; // when true, basePrice presumed inclusive of add-ons
+  allInclusive?: boolean;
   bookingAmount?: number;
 };
 
+export type MediaKind = "image" | "video" | "floor_plan" | "document";
+
 export type Media = {
+  id?: string;
   url: string;
-  alt?: string;
-  isPrimary?: boolean;
+  kind?: MediaKind | null;
+  order?: number | null;
+  alt?: string | null;
+  isPrimary?: boolean | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type DocumentRef = {
-  label: string; // e.g., "RERA Certificate", "Title Deed"
+  id?: string;
+  label: string;
   url: string;
+  kind?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ContactType = "Owner" | "Broker" | "Builder" | "Agency";
 
 export type AddressParts = {
-  line1?: string;
-  line2?: string;
-  locality?: string; // e.g., Sea Beach Road
-  landmark?: string;
-  city?: string; // default Puri
-  state?: string; // default Odisha
-  pincode?: string;
+  line1?: string | null;
+  line2?: string | null;
+  locality?: string | null;
+  landmark?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
 };
 
 export type GeoLocation = {
   lat: number;
   lng: number;
+  accuracyMeters?: number;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Listing entity (single shape that covers all categories)
-// ─────────────────────────────────────────────────────────────────────────────
+export type ListingBroker = {
+  id?: string;
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  type?: ContactType | null;
+};
+
+export type ListingSEO = {
+  title?: string | null;
+  description?: string | null;
+  keywords?: string[];
+};
+
+export type ListingAnalytics = {
+  views?: number;
+  saves?: number;
+  inquiries?: number;
+};
+
 export type Listing = {
   id: string;
-  slug?: string; // for SEO-friendly routes
+  slug?: string;
+  externalId?: string | null;
 
   // Meta
   category: ListingCategory;
-  transactionType: TransactionType; // For Sale / For Rent (we'll use For Sale initially)
-  status: ListingStatus; // availability of this listing
-  constructionStatus?: ConstructionStatus; // property readiness
+  transactionType: TransactionType;
+  status: ListingStatus;
+  constructionStatus?: ConstructionStatus | null;
 
   // Basic details
-  title: string; // e.g., "3BHK Sea-Facing Apartment"
-  description?: string;
-  ownership?: OwnershipType;
+  title: string;
+  subtitle?: string | null;
+  description?: string | null;
+  highlights?: string[] | null;
+  ownership?: OwnershipType | string | null;
   yearBuilt?: number;
-  possessionDate?: string; // ISO date if future possession
+  possessionDate?: string | null;
 
-  // Areas (choose applicable for category)
-  carpetArea?: Area; // usually for livable units
-  builtUpArea?: Area; // optional
-  superBuiltUpArea?: Area; // optional
-  landArea?: Area; // plots/farm land/independent house sites
+  // Areas
+  carpetArea?: Area;
+  builtUpArea?: Area;
+  superBuiltUpArea?: Area;
+  landArea?: Area;
 
-  // Additional plot/land geometry
+  // Plot geometry
   plotLengthFt?: number;
   plotWidthFt?: number;
   frontageFt?: number;
   roadWidthFt?: number;
-  plotFacing?: DirectionFacing;
-  cornerPlot?: boolean;
+  plotFacing?: DirectionFacing | null;
+  cornerPlot?: boolean | null;
 
-  // Unit specs (for flats/houses/villas)
-  bedrooms?: number;
-  bathrooms?: number;
-  balconies?: number;
-  furnishing?: Furnishing;
-  floorNumber?: number; // for flats
-  totalFloors?: number; // for buildings
-  hasLift?: boolean;
-  coveredParkingCount?: number;
-  openParkingCount?: number;
-  vaastuCompliant?: boolean;
-  unitFacing?: DirectionFacing;
+  // Unit specs
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  balconies?: number | null;
+  furnishing?: Furnishing | null;
+  floorNumber?: number | null;
+  totalFloors?: number | null;
+  hasLift?: boolean | null;
+  coveredParkingCount?: number | null;
+  openParkingCount?: number | null;
+  vaastuCompliant?: boolean | null;
+  unitFacing?: DirectionFacing | null;
 
-  // Price & commercial
-  price: number; // in INR (base price if allInclusive=false)
+  // Pricing
+  price: number;
+  pricePerSqft?: number | null;
   priceBreakup?: PriceBreakup;
+  maintenanceTerms?: string | null;
 
   // Location & address
-  address: string; // full address fallback
+  address?: string | null;
   addressParts?: AddressParts;
-  geo?: GeoLocation; // map pin
+  geo?: GeoLocation;
 
-  // Community/Project
-  societyName?: string; // for society/complex
-  reraId?: string;
-  reraRegistered?: boolean;
-  amenities?: Amenity[];
+  // Project / society
+  societyName?: string | null;
+  projectName?: string | null;
+  reraId?: string | null;
+  reraRegistered?: boolean | null;
+  amenities?: Amenity[] | string[] | null;
+  tags?: string[] | null;
 
   // Media & docs
-  images: Media[]; // first primary used as cover
-  videoUrls?: string[];
-  virtualTourUrl?: string;
-  documents?: DocumentRef[];
+  images: Media[];
+  videoUrls?: string[] | null;
+  virtualTourUrl?: string | null;
+  documents?: DocumentRef[] | null;
 
   // Contact & attribution
-  listedByType?: ContactType; // Owner/Broker/Builder/Agency
-  listedByName?: string;
-  contactNumber?: string;
-  verified?: boolean; // internal verification status
+  listedByType?: ContactType | null;
+  listedByName?: string | null;
+  contactNumber?: string | null;
+  contactEmail?: string | null;
+  whatsAppNumber?: string | null;
+  verified?: boolean | null;
+  broker?: ListingBroker | null;
 
-  // Operational
-  isFeatured?: boolean;
-  tags?: string[]; // e.g., ["Sea-facing", "New Launch"]
-  createdAt?: string; // ISO
-  updatedAt?: string; // ISO
-  postedAt?: string; // ISO (displayed as time-ago)
-};
-export type ListingBadge = "New" | "Hot" | "RERA" | "Verified";
+  // Flags & operations
+  isFeatured?: boolean | null;
+  featuredAt?: string | null;
+  publishedAt?: string | null;
+  postedAt?: string | undefined;
+  archivedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 
-export type Price = {
-  amount: number;
-  currency?: "INR";
-  maintenance?: number;
-  negotiable?: boolean;
+  seo?: ListingSEO | null;
+  analytics?: ListingAnalytics | null;
 };
 
-export type Location = {
-  address?: string;
-  locality: string;
-  city: string; // "Puri"
-};
+export const formatTransactionType = (value?: TransactionType | null) =>
+  value ? (TRANSACTION_TYPE_LABELS[value] ?? titleize(value)) : undefined;
+
+export const formatListingStatus = (value?: ListingStatus | null) =>
+  value ? (LISTING_STATUS_LABELS[value] ?? titleize(value)) : undefined;
+
+export const formatConstructionStatus = (value?: ConstructionStatus | null) =>
+  value ? (CONSTRUCTION_STATUS_LABELS[value] ?? titleize(value)) : undefined;
+
+export const formatFurnishing = (value?: Furnishing | null) =>
+  value ? (FURNISHING_LABELS[value] ?? titleize(value)) : undefined;
+
+export const formatDirectionFacing = (value?: DirectionFacing | null) => value ?? undefined;
+
+export const formatCategory = (value?: ListingCategory | null) => value ?? undefined;
+
+const titleize = (input: string) =>
+  input
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");

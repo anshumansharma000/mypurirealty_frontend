@@ -208,12 +208,16 @@ function LightboxContent({
           }}
         >
           {ordered[index].type === "image" ? (
-            // use <img> to avoid next/image fill issues in fullscreen
-            <img
-              src={ordered[index].src}
-              alt={ordered[index].alt || "image"}
-              className="max-h-[80vh] w-auto object-contain"
-            />
+            <div className="relative h-[80vh] w-full max-w-5xl">
+              <Image
+                src={ordered[index].src}
+                alt={ordered[index].alt || "image"}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 80vw"
+                priority
+              />
+            </div>
           ) : (
             <video
               src={ordered[index].src}

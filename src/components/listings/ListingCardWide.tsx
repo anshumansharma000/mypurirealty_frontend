@@ -9,6 +9,11 @@ import {
   timeAgo,
 } from "@/lib/format";
 import type { Listing, Media } from "@/lib/types";
+import {
+  formatFurnishing,
+  formatListingStatus,
+  formatTransactionType,
+} from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -58,6 +63,10 @@ export default function ListingCardWide({
   const linkHref = href ?? `/listings/${slugPart}?id=${encodeURIComponent(listing.id)}`;
   const cover = primary(listing.images);
   const allIn = estimateAllInclusivePrice(listing.price, listing.priceBreakup);
+  const transactionLabel =
+    formatTransactionType(listing.transactionType) ?? listing.transactionType;
+  const statusLabel = formatListingStatus(listing.status) ?? listing.status;
+  const furnishingLabel = formatFurnishing(listing.furnishing) ?? listing.furnishing ?? undefined;
 
   return (
     <article
@@ -80,11 +89,9 @@ export default function ListingCardWide({
           </span>
         )}
         <span className="rounded-full bg-white px-2 py-0.5 ring-1 ring-black/5">
-          {listing.transactionType}
+          {transactionLabel}
         </span>
-        <span className="rounded-full bg-white px-2 py-0.5 ring-1 ring-black/5">
-          {listing.status}
-        </span>
+        <span className="rounded-full bg-white px-2 py-0.5 ring-1 ring-black/5">{statusLabel}</span>
         {listing.societyName && (
           <span className="rounded-full bg-white px-2 py-0.5 ring-1 ring-black/5">
             {listing.societyName}
@@ -160,10 +167,10 @@ export default function ListingCardWide({
                 <dd className="font-medium">{listing.bathrooms}</dd>
               </div>
             )}
-            {listing.furnishing && (
+            {furnishingLabel && (
               <div>
                 <dt className="text-neutral-500">Furnishing</dt>
-                <dd className="font-medium">{listing.furnishing}</dd>
+                <dd className="font-medium">{furnishingLabel}</dd>
               </div>
             )}
             {typeof listing.floorNumber === "number" && (

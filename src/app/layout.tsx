@@ -3,6 +3,7 @@ import "./globals.css";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import QueryProvider from "@/shared/query/client";
+import { ToastProvider } from "@/shared/ui/toast";
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 
@@ -18,9 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={manrope.variable}>
       <body className="bg-bg text-ink antialiased flex flex-col min-h-screen">
         <QueryProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ToastProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ToastProvider>
         </QueryProvider>
       </body>
     </html>

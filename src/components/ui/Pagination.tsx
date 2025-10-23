@@ -26,9 +26,13 @@ export default function Pagination({
 
   const windowSize = 5;
   const half = Math.floor(windowSize / 2);
-  let start = Math.max(1, currentPage - half);
-  let end = Math.min(totalPages, start + windowSize - 1);
-  if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+  const initialStart = Math.max(1, currentPage - half);
+  const initialEnd = Math.min(totalPages, initialStart + windowSize - 1);
+  const start =
+    initialEnd - initialStart + 1 < windowSize
+      ? Math.max(1, initialEnd - windowSize + 1)
+      : initialStart;
+  const end = Math.min(totalPages, start + windowSize - 1);
 
   const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
   const btn =

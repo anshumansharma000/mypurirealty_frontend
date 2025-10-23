@@ -323,16 +323,3 @@ function Lightbox({
     </div>
   );
 }
-
-/* ───────────────────────── Utilities ───────────────────────── */
-
-function Noop() {
-  return null;
-}
-
-/* Hide scrollbars for nice look on webkit + firefox */
-declare global {
-  interface HTMLElementTagNameMap {
-    "noop-el": HTMLElement;
-  }
-}

@@ -1,10 +1,11 @@
 "use client";
 
 import { Media } from "./MediaViewer";
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 
 type FactItem = { label: string; value: string | number; highlight?: boolean };
-type HeadlineFact = { icon: any; label: string };
+type HeadlineFact = { icon: LucideIcon; label: string };
 
 type Props = {
   media: Media[];

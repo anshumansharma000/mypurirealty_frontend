@@ -1,5 +1,6 @@
 "use client";
 
+import { env } from "@/config/env";
 import { Bookmark, Share2 } from "lucide-react";
 import React from "react";
 
@@ -12,13 +13,22 @@ export default function ListingHeaderActions({ listingId, title }: Props) {
   const [saved, setSaved] = React.useState(false);
   const [copyDone, setCopyDone] = React.useState(false);
 
+  const getShareUrl = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      return window.location.href;
+    }
+    const base = (env.appUrl ?? "").replace(/\/$/, "");
+    if (!listingId) return base || "/listings";
+    return `${base ? `${base}` : ""}/listings/${listingId}`;
+  }, [listingId]);
+
   const onSave = () => {
     // TODO: call your API to persist save/unsave
     setSaved((s) => !s);
   };
 
   const onShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    const url = getShareUrl();
     try {
       if (navigator.share) {
         await navigator.share({ title, url });

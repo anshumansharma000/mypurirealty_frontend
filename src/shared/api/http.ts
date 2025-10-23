@@ -1,4 +1,6 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE!;
+import { env } from "@/config/env";
+import { getAccessToken } from "@/shared/auth/token";
+
 export class ApiError extends Error {
   status: number;
   body?: unknown;
@@ -10,9 +12,25 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const isMultipart = init?.body instanceof FormData;
+  const headers = new Headers(init?.headers ?? undefined);
+
+  if (!isMultipart && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const token = getAccessToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (!env.apiBase) {
+    throw new Error("Missing API base URL. Check src/config/env.ts or environment variables.");
+  }
+
+  const res = await fetch(`${env.apiBase}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    headers,
     // credentials: "include",
     cache: "no-store",
   });
