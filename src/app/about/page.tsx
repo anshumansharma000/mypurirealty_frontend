@@ -63,7 +63,7 @@ export default function AboutPage() {
 
         <p className="mt-12 text-zinc-700">
           Have questions? Reach us at{" "}
-          <a className="underline" href="mailto:support@mypurirealty.com">
+          <a className="underline" href="mailto:mypurirealty@gmail.com">
             support@mypurirealty.com
           </a>
         </p>

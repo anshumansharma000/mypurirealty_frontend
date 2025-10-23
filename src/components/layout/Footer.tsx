@@ -15,6 +15,13 @@ export default function Footer() {
             <p className="mt-2 text-sm text-white/80 max-w-sm">
               Localized listings for Puri. Simple, verified, and trusted.
             </p>
+            <p className="mt-2 text-sm text-white/80 max-w-sm">
+              Email: mypurirealty@gmail.com
+              <p className="mt-2 text-sm text-white/80 max-w-sm">Phone: +91-9438141111</p>
+            </p>
+            <p className="mt-2 text-sm text-white/80 max-w-sm">
+              Address: Plot No. 186, Prabhat Lane, Dutta Tota, Puri, Odisha 752001
+            </p>
           </div>
 
           {/* Links */}

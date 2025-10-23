@@ -90,7 +90,7 @@ export default function PrivacyPage() {
           <li>
             Request access, correction, portability, or deletion subject to legal and contractual
             limitations by contacting us at{" "}
-            <a className="underline" href="mailto:privacy@mypurirealty.com">
+            <a className="underline" href="mailto:mypurirealty@gmail.com">
               privacy@mypurirealty.com
             </a>
             .
@@ -132,11 +132,11 @@ export default function PrivacyPage() {
         <h2 className="mt-10 text-xl font-semibold">10. Contact Us</h2>
         <p className="mt-2 text-zinc-700">
           For questions or requests, contact{" "}
-          <a className="underline" href="mailto:privacy@mypurirealty.com">
+          <a className="underline" href="mailto:mypurirealty@gmail.com">
             privacy@mypurirealty.com
           </a>{" "}
           or{" "}
-          <a className="underline" href="mailto:support@mypurirealty.com">
+          <a className="underline" href="mailto:mypurirealty@gmail.com">
             support@mypurirealty.com
           </a>
           .

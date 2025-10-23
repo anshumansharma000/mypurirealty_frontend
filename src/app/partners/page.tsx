@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import type { Metadata } from "next";
-import Link from "next/link";
 import {
   BarChart3,
   Building2,
@@ -14,6 +12,8 @@ import {
   LayoutDashboard,
   Sparkles,
 } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Partners Program | mypurirealty",
@@ -107,12 +107,12 @@ export default function PartnersPage() {
               Grow with mypurirealty as a trusted property partner
             </h1>
             <p className="max-w-2xl text-base text-white/80 md:text-lg">
-              We are building a partner-first platform where owners and brokers can list confidently,
-              tap into verified buyer demand, and co-create a transparent real estate experience for
-              Puri.
+              We are building a partner-first platform where owners and brokers can list
+              confidently, tap into verified buyer demand, and co-create a transparent real estate
+              experience for Puri.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="mailto:partners@mypurirealty.com">
+              <Link href="mailto:mypurirealty@gmail.com">
                 <Button size="lg" className="bg-white text-ink hover:bg-white/90">
                   Join the waitlist
                 </Button>
@@ -228,7 +228,7 @@ export default function PartnersPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="mailto:partners@mypurirealty.com">
+            <Link href="mailto:mypurirealty@gmail.com">
               <Button size="lg">Introduce your portfolio</Button>
             </Link>
             <Link href="/about">
@@ -242,4 +242,3 @@ export default function PartnersPage() {
     </main>
   );
 }
-
